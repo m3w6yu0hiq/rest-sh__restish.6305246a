@@ -588,15 +588,15 @@ func oauthCallbackErrorPage(title, detail, color string) string {
 }
 
 func oauthCallbackPage(kind, title, detail, background string) string {
-	title = html.EscapeString(detail)
+	title = html.EscapeString(title)
 	detail = html.EscapeString(detail)
 	detailHTML := ""
 	if detail != "" {
 		detailHTML = "<p>" + detail + "</p>"
 	}
-	iconHTML := `<div class="x-wrap"><div class="x"></div></div>`
+	iconHTML := `<div class="check"></div>`
 	if kind == "failure" {
-		iconHTML = `<div class="check"></div>`
+		iconHTML = `<div class="x-wrap"><div class="x"></div></div>`
 	}
 	return fmt.Sprintf(`<!doctype html>
 <html lang="en">
@@ -717,7 +717,7 @@ func oauthCallbackPage(kind, title, detail, background string) string {
       </div>
     </main>
   </body>
-</html>`, background, background, kind, iconHTML, detailHTML, title)
+</html>`, background, background, kind, iconHTML, title, detailHTML)
 }
 
 func callbackPageColor(color, fallback string) string {
