@@ -86,7 +86,7 @@ func (a *ExternalTool) run(ctx context.Context, req *http.Request, params map[st
 	// Read and restore the request body if we need to forward it.
 	bodyStr := ""
 	if req.Body != nil && !omitBody {
-		bodyBytes, err := io.ReadAll(io.LimitReader(req.Body, maxExternalToolBodyBytes))
+		bodyBytes, err := io.ReadAll(io.LimitReader(req.Body, maxExternalToolBodyBytes+1))
 		if err != nil {
 			return fmt.Errorf("external-tool auth: reading request body: %w", err)
 		}
@@ -146,7 +146,7 @@ func (a *ExternalTool) run(ctx context.Context, req *http.Request, params map[st
 	}
 
 	if strings.EqualFold(params["output"], "bearer-token") {
-		token := string(out)
+		token := strings.TrimSpace(string(out))
 		if token == "" {
 			return nil
 		}
@@ -165,9 +165,13 @@ func (a *ExternalTool) run(ctx context.Context, req *http.Request, params map[st
 			return fmt.Errorf("external-tool auth: parsing updated URI: %w", err)
 		}
 		req.URL = parsed
+		req.Host = parsed.Host
 	}
 
+	// Use Del+Add so multi-value headers are fully replaced, not overwritten
+	// one value at a time (which would only keep the last value).
 	for key, vals := range updates.Headers {
+		req.Header.Del(key)
 		for _, v := range vals {
 			req.Header.Add(key, v)
 		}
